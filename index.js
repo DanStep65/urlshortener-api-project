@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 
 //add a new custom file that records all of the shorturls, must contain 1 json to prevent error
-const shorturl = require('./shorturl');
+const shorturl = require(`${process.cwd()}/shorturl`);
 
 // Basic Configuration
 const port = process.env.PORT || 3000;
@@ -24,33 +24,37 @@ app.get('/api/hello', function(req, res) {
   res.json({ greeting: 'hello API' });
 });
 
-app.route('/api/shorturl')
-  .post((req, res) => {
-    //create an empty array that will contain shorturl records and the new shorturl from the post
-    // const array = [];
-    // array.push(shorturl);
+app.post('/api/shorturl/', (req, res) => {
     
     //regex taken from cloudhadoop and stackoverflow, used to verify the url
     const regexpression = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
-
     if(regexpression.test(req.body.url)){
-      let json_req = {
-        original_url: req.body.url,
-        short_url: shorturl.length + 1
-      };
-      shorturl.push(json_req);
-      //write the shorturl record in shorturl.json
-      fs.writeFile('shorturl.json', JSON.stringify(shorturl), (err) => {
-        if (!err) {
-          console.log('done');
-        }
+      let url_done = shorturl.filter(obj => {
+        return obj.original_url == req.body.url
       });
-      res.json(json_req);      
+      if(url_done.length === 0){
+        let json_req = {
+          original_url: req.body.url,
+          short_url: shorturl.length + 1
+        };
+        shorturl.push(json_req);
+        //write the shorturl record in shorturl.json
+        fs.writeFile('shorturl.json', JSON.stringify(shorturl), (err) => {
+          if(err) return console.log(err);
+        });
+        res.json(json_req);      
+      }
+      else{
+        res.json(url_done[0]);
+      }
     }
     else{
       res.json({"error":"invalid url"});
     }
   });
+app.get('/api/shorturl/:num', (req, res) => {
+  
+});
 
 
 
